@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 
 from apps.view import main
-from apps.models.user import User, USERS, USER_NAMES
+from apps.models.user import User
 import requests
 from flask import request, redirect
 from flask.ext.login import \
@@ -10,11 +10,15 @@ from flask.ext.login import \
 from config.setting import (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
                             REDIRECT_URI, GOOGLE_ACCOUNTS_BASE_URL)
 import json
-
+from config.app_setting import IS_DATABASE
 
 
 @main.route("/")
 def hello():
+    if IS_DATABASE:
+        user = User.query.get(1)
+        if user:
+            print user.email
     if current_user.is_authenticated:
         return "User " + str(current_user.myemail()) + "is logged in"
 
@@ -34,12 +38,14 @@ def login():
     if current_user.is_authenticated:
         return current_user.get_id()
 
-    if request.method == "GET":
-        useremail = request.args.get('email', '')
-        if useremail:
-            if useremail in USER_NAMES:
-                loginit = login_user(USER_NAMES[useremail], remember="yes")
-                return "user already exists and logged in"
+    if not IS_DATABASE:
+        from apps.models.user import USER_NAMES
+        if request.method == "GET":
+            useremail = request.args.get('email', '')
+            if useremail:
+                if useremail in USER_NAMES:
+                    loginit = login_user(USER_NAMES[useremail], remember="yes")
+                    return "user already exists and logged in"
 
     if request.method == "GET" and request.args.get('email', ''):
         url = GeneratePermissionUrl(GOOGLE_CLIENT_ID, request.args.get('email', ''),
@@ -77,13 +83,18 @@ def oauth2callback():
     options["lastname"] = j.get("family_name")
     options["accesstoken"] = accesstoken
 
-    if options["email"] in USER_NAMES:
-        userid = USER_NAMES.get(options['email']).id
-    else:
-        userid = len(USERS) + 1
+    if not IS_DATABASE:
+        from apps.models.user import USER_NAMES, USERS
+        if options["email"] in USER_NAMES:
+            userid = USER_NAMES.get(options['email']).id
+        else:
+            userid = len(USERS) + 1
 
-    u = User(options.get("email"), userid, options.get("firstname"), options.get("lastname"), accesstoken)
-    USERS[userid] = u
+        u = User(options.get("email"), userid, options.get("firstname"), options.get("lastname"), accesstoken)
+        USERS[userid] = u
+    else:
+        pass
+
     loginit = login_user(u, remember="yes")
     if loginit == True:
         return "Everything happened Successfullly"

@@ -30,7 +30,7 @@ def create_app(config_name):
     # apps.json_encoder = AlchemyEncoder
 
     login_manager.init_app(app)
-    # db.init_app(app)
+    db.init_app(app)
     # db.reflect(apps=apps)
 
     # init raven
@@ -43,8 +43,12 @@ def create_app(config_name):
     return app
 
 
-
-from apps.models.user import User, USERS, USER_NAMES
+from config.app_setting import IS_DATABASE
+from apps.models.user import User
 @login_manager.user_loader
 def load_user(id):
-    return USERS.get(int(id))
+    if not IS_DATABASE:
+        from apps.models.user import USERS
+        return USERS.get(int(id))
+    else:
+        return User.query.get(id)
