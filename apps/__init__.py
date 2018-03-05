@@ -2,20 +2,19 @@
 
 # from raven.contrib.flask import Sentry
 from flask import Flask
-# from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 # from admin.utils.AlchemyEncoder import AlchemyEncoder
 from flask_login import LoginManager
-
 from config.app_setting import config
 
 # import boto3
 # import redis
 
-# login_manager = LoginManager()
+login_manager = LoginManager()
 # login_manager.session_protection = 'strong'
 # login_manager_view = 'auth.login'
 
-# db = SQLAlchemy()
+db = SQLAlchemy()
 
 sentry_client = None
 
@@ -30,7 +29,7 @@ def create_app(config_name):
 
     # apps.json_encoder = AlchemyEncoder
 
-    # login_manager.init_app(apps)
+    login_manager.init_app(app)
     # db.init_app(app)
     # db.reflect(apps=apps)
 
@@ -42,3 +41,10 @@ def create_app(config_name):
     app.register_blueprint(main_blueprint)
 
     return app
+
+
+
+from apps.models.user import User, USERS, USER_NAMES
+@login_manager.user_loader
+def load_user(id):
+    return USERS.get(int(id))

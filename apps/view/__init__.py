@@ -10,3 +10,6 @@ main.config = {}
 # def record_params(setup_state):
 #     apps = setup_state.apps
 #     main.config = dict([(key, value) for (key, value) in apps.config.items()])
+
+
+from . import login

@@ -1,3 +1,5 @@
 *.py[cox]
 config/setting.py
 config/app_setting.py
+.idea
+.idea/*
