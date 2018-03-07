@@ -18,7 +18,6 @@ from apps import redis_local_db
 
 @main.route("/")
 def hello():
-    print session
     if current_user.is_authenticated:
         return "User " + str(current_user.myemail()) + "is logged in"
 
@@ -28,8 +27,6 @@ def hello():
 @main.route("/required")
 @login_required
 def require():
-    print request.view_args
-    print session
     return 'had login'
 
 
@@ -37,6 +34,7 @@ def require():
 @login_required
 def logout():
     logout_user()
+    session.pop('token')
     return redirect("/")
 
 
@@ -52,8 +50,8 @@ def login():
             useremail = request.args.get('email', '')
             if useremail:
                 if useremail in USER_NAMES:
-                    # loginit = login_user(USER_NAMES[useremail], remember="yes")
-                    loginit = login_user(USER_NAMES[useremail], remember=False)
+                    loginit = login_user(USER_NAMES[useremail], remember="yes")
+                    # loginit = login_user(USER_NAMES[useremail], remember=False)
                     return "user already exists and logged in"
 
     if request.method == "GET" and request.args.get('email', ''):
@@ -118,7 +116,6 @@ def oauth2callback():
         # 生成token，并返回
         token = u.hmac_md5(int(time.time()))
         token = 'token:%s' % token
-        print token
         session['token'] = token
         redis_local_db.setex(token, 600, u.id)
         return jsonify({'c': 0, 'd': {'token': token}})

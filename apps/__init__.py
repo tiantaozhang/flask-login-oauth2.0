@@ -60,9 +60,6 @@ from apps.models.user import User
 #         print 'user_loader'
 #         return User.query.get(id)
 #
-# @login_manager.header_loader
-# def load_header(header_val):
-#     print header_val
 
 
 @login_manager.request_loader
@@ -75,7 +72,6 @@ def load_request(request):
 
     redis_token_key = '%s' % token
     token_uid = redis_local_db.get(redis_token_key)
-    print token_uid
     if token_uid:   # 延长过期时间
         redis_local_db.expire(redis_token_key, 600)
         user = User.query.get(token_uid)
