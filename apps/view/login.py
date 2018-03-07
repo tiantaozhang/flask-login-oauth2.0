@@ -3,7 +3,7 @@
 from apps.view import main
 from apps.models.user import User
 import requests
-from flask import request, redirect
+from flask import request, redirect, session, jsonify
 from flask.ext.login import \
     (current_user, login_required, login_user,
      logout_user, UserMixin, AnonymousUserMixin)
@@ -11,18 +11,26 @@ from config.setting import (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
                             REDIRECT_URI, GOOGLE_ACCOUNTS_BASE_URL)
 import json
 from config.app_setting import IS_DATABASE
+from apps import db
+import time
+from apps import redis_local_db
 
 
 @main.route("/")
 def hello():
-    if IS_DATABASE:
-        user = User.query.get(1)
-        if user:
-            print user.email
+    print session
     if current_user.is_authenticated:
         return "User " + str(current_user.myemail()) + "is logged in"
 
     return "Hello World!"
+
+
+@main.route("/required")
+@login_required
+def require():
+    print request.view_args
+    print session
+    return 'had login'
 
 
 @main.route("/logout", methods=["GET"])
@@ -44,7 +52,8 @@ def login():
             useremail = request.args.get('email', '')
             if useremail:
                 if useremail in USER_NAMES:
-                    loginit = login_user(USER_NAMES[useremail], remember="yes")
+                    # loginit = login_user(USER_NAMES[useremail], remember="yes")
+                    loginit = login_user(USER_NAMES[useremail], remember=False)
                     return "user already exists and logged in"
 
     if request.method == "GET" and request.args.get('email', ''):
@@ -93,11 +102,26 @@ def oauth2callback():
         u = User(options.get("email"), userid, options.get("firstname"), options.get("lastname"), accesstoken)
         USERS[userid] = u
     else:
-        pass
+        u = User.query.filter(User.email == options['email']).first()
+        if u:
+            print u.id, u.email
+        else:
+            u = User(options['email'])
+            print accesstoken
+            db.session.add(u)
+            db.session.commit()
 
     loginit = login_user(u, remember="yes")
     if loginit == True:
-        return "Everything happened Successfullly"
+        # 用request_loader， 神坑
+        session['remember'] = 'clear'
+        # 生成token，并返回
+        token = u.hmac_md5(int(time.time()))
+        token = 'token:%s' % token
+        print token
+        session['token'] = token
+        redis_local_db.setex(token, 600, u.id)
+        return jsonify({'c': 0, 'd': {'token': token}})
     return "Some Problem happened"
 
 

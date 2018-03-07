@@ -4,6 +4,7 @@ from apps import db
 from sqlalchemy import Integer, String
 from flask.ext.login import UserMixin
 from config.app_setting import IS_DATABASE
+import hmac, hashlib
 
 
 if not IS_DATABASE:
@@ -55,15 +56,22 @@ else:
         id = db.Column('id', Integer, primary_key=True)
         email = db.Column(String)
 
-        def __init__(self, email, id, accesstoken="", active=True):
+        def __init__(self, email, accesstoken=""):
             self.email = email
-            self.id = id
-            self.active = active
             self.accesstoken = accesstoken
 
         def is_active(self):
-            return self.active
+            u = User.query.get(self.id)
+            if u:
+                return True
+            else:
+                return False
+
+        def is_authenticated(self):
+            return True
 
         def myemail(self):
             return self.email
 
+        def hmac_md5(self, s):
+            return hmac.new(('%s' % self.id).encode('utf-8'), ('%s' % s).encode('utf-8'), hashlib.md5).hexdigest()
