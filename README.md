@@ -16,3 +16,9 @@ flask flask-login google oauth2.0
 [http://127.0.0.1:9000](http://127.0.0.1:9000)
 
 登录：[http://127.0.0.1:9000/login?email=xxx@gmail.com](http://127.0.0.1:9000/login?email=xxx@gmail.com)
+
+备注：由于flask-login 0.4.1版本有bug，目前还没发布新版本，所以flask-login要单独安装,
+ ```
+ pip uninstall Flask-Login
+ pip install git+https://github.com/maxcountryman/flask-login.git
+ ```
